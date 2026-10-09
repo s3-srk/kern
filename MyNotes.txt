@@ -1,0 +1,4 @@
+Agent Building Notes:
+
+1. In the README, list "tool outputs and raw provider blocks are typed unknown; a JsonValue type is the planned tightening" under known limitations.
+
