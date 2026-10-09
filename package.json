@@ -1,0 +1,25 @@
+{
+  "name": "kern",
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "typecheck": "tsc",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "build": "tsc --project tsconfig.build.json"
+  },
+  "dependencies": {
+    "zod": "^4"
+  },
+  "devDependencies": {
+    "@eslint/js": "latest",
+    "@types/node": "latest",
+    "typescript": "latest",
+    "typescript-eslint": "latest",
+    "vitest": "latest",
+    "tsx": "latest"
+  }
+}

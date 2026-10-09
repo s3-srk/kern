@@ -1,0 +1,14 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": { "source.fixAll.eslint": "explicit" },
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
+  "js/ts.preferences.importModuleSpecifierEnding": "js",
+  "files.exclude": { "runs/": true, "dist/": true },
+  "search.exclude": { "node_modules": true, "runs": true, "dist": true },
+  "git.enableSmartCommit": false,
+  "git.confirmSync": true
+}

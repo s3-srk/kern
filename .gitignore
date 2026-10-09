@@ -1,0 +1,7 @@
+node_modules
+dist
+runs/
+.env
+coverage
+.claude/settings.json,
+docs/
