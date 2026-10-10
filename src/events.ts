@@ -29,6 +29,7 @@ export interface RunStartedEvent extends EventEnvelope {
   type: "run_started";
   agentName: string;
   model: string;
+  instructions: string;
   input: string;
 }
 

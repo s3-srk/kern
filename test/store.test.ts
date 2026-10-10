@@ -23,10 +23,11 @@ describe("JsonlRunStore", () => {
     it("round-trips events in order, unchanged", async () => {
       const event1 = stampEvent(
         {
-          type: "run_started",
-          agentName: "test-agent",
-          model: "anthropic:claude-3-sonnet",
-          input: "Hello",
+        type: "run_started",
+        agentName: "",
+        model: "",
+        instructions: "Test instructions",
+        input: "Hello",
         },
         { runId: "test-run-1", seq: 1 }
       );
@@ -84,20 +85,22 @@ describe("JsonlRunStore", () => {
     it("stores runs in separate files", async () => {
       const event1 = stampEvent(
         {
-          type: "run_started",
-          agentName: "agent-a",
-          model: "anthropic:claude-3-sonnet",
-          input: "Input A",
+        type: "run_started",
+        agentName: "",
+        model: "",
+        instructions: "Test instructions",
+        input: "Input A",
         },
         { runId: "run-a", seq: 1 }
       );
 
       const event2 = stampEvent(
         {
-          type: "run_started",
-          agentName: "agent-b",
-          model: "anthropic:claude-3-sonnet",
-          input: "Input B",
+        type: "run_started",
+        agentName: "",
+        model: "",
+        instructions: "Test instructions",
+        input: "Input B",
         },
         { runId: "run-b", seq: 1 }
       );
@@ -117,20 +120,22 @@ describe("JsonlRunStore", () => {
     it("list returns both runs sorted", async () => {
       const event1 = stampEvent(
         {
-          type: "run_started",
-          agentName: "a",
-          model: "anthropic:claude-3-sonnet",
-          input: "A",
+        type: "run_started",
+        agentName: "",
+        model: "",
+        instructions: "Test instructions",
+        input: "A",
         },
         { runId: "zebra-run", seq: 1 }
       );
 
       const event2 = stampEvent(
         {
-          type: "run_started",
-          agentName: "b",
-          model: "anthropic:claude-3-sonnet",
-          input: "B",
+        type: "run_started",
+        agentName: "",
+        model: "",
+        instructions: "Test instructions",
+        input: "B",
         },
         { runId: "alpha-run", seq: 1 }
       );
@@ -151,6 +156,7 @@ describe("JsonlRunStore", () => {
           type: "run_started",
           agentName: "test",
           model: "anthropic:claude-3-sonnet",
+          instructions: "Test instructions",
           input: "test",
         },
         { runId: "test-run-3", seq: 1 }
@@ -177,7 +183,8 @@ describe("JsonlRunStore", () => {
             type: "run_started",
             agentName: "test",
             model: "anthropic:claude-3-sonnet",
-            input: "test",
+            instructions: "Test instructions",
+          input: "test",
           },
           { runId: "test-run-4", seq: 1 }
         )
@@ -213,7 +220,8 @@ describe("JsonlRunStore", () => {
             type: "run_started",
             agentName: "test",
             model: "anthropic:claude-3-sonnet",
-            input: "test",
+            instructions: "Test instructions",
+          input: "test",
           },
           { runId: "test-run-5", seq: 1 }
         )
@@ -250,6 +258,7 @@ describe("JsonlRunStore", () => {
           type: "run_started",
           agentName: "test",
           model: "anthropic:claude-3-sonnet",
+          instructions: "Test instructions",
           input: "test",
         },
         { runId: "normal-run", seq: 1 }
@@ -275,6 +284,7 @@ describe("JsonlRunStore", () => {
           type: "run_started",
           agentName: "test",
           model: "anthropic:claude-3-sonnet",
+          instructions: "Test instructions",
           input: "test",
         },
         { runId: "normal-run", seq: 1 }
@@ -317,7 +327,8 @@ describe("JsonlRunStore", () => {
             type: "run_started",
             agentName: "test",
             model: "anthropic:claude-3-sonnet",
-            input: "test",
+            instructions: "Test instructions",
+          input: "test",
           },
           { runId: validId, seq: 1 }
         );

@@ -6,10 +6,11 @@ describe("deriveState", () => {
     const events = [
       stampEvent(
         {
-          type: "run_started",
-          agentName: "test-agent",
-          model: "anthropic:claude-3-sonnet",
-          input: "Hello",
+        type: "run_started",
+        agentName: "",
+        model: "",
+        instructions: "Test instructions",
+        input: "Hello",
         },
         { runId: "run-1", seq: 1 }
       ),
@@ -80,10 +81,11 @@ describe("deriveState", () => {
     const events = [
       stampEvent(
         {
-          type: "run_started",
-          agentName: "test-agent",
-          model: "anthropic:claude-3-sonnet",
-          input: "Delete the file",
+        type: "run_started",
+        agentName: "",
+        model: "",
+        instructions: "Test instructions",
+        input: "Delete the file",
         },
         { runId: "run-2", seq: 1 }
       ),
@@ -183,6 +185,7 @@ describe("deriveState", () => {
           type: "run_started",
           agentName: "test-agent",
           model: "anthropic:claude-3-sonnet",
+          instructions: "Test instructions",
           input: "test",
         },
         { runId: "run-4", seq: 1 }

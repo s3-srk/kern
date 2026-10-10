@@ -14,6 +14,7 @@ describe("events", () => {
         type: "run_started",
         agentName: "test-agent",
         model: "anthropic:claude-3-sonnet",
+        instructions: "Be helpful",
         input: "Hello",
       };
 
@@ -35,6 +36,7 @@ describe("events", () => {
         type: "run_started",
         agentName: "test-agent",
         model: "anthropic:claude-3-sonnet",
+        instructions: "Be helpful",
         input: "Hello",
       };
 
@@ -116,7 +118,8 @@ describe("events", () => {
             type: "run_started",
             agentName: "test",
             model: "anthropic:claude-3-sonnet",
-            input: "test",
+            instructions: "Test instructions",
+          input: "test",
           },
           { runId: "run-3", seq: 1 }
         ),
@@ -182,7 +185,8 @@ describe("events", () => {
             type: "run_started",
             agentName: "test",
             model: "anthropic:claude-3-sonnet",
-            input: "test",
+            instructions: "Test instructions",
+          input: "test",
           },
           { runId: "run-4", seq: 1 }
         ),
