@@ -10,3 +10,6 @@ export { Agent } from "./agent.js";
 export type { AgentConfig } from "./agent.js";
 export { truncatingContext } from "./context.js";
 export type { ContextStrategy } from "./context.js";
+export { runLoop } from "./loop.js";
+export { Runner } from "./runner.js";
+export type { RunnerOptions } from "./runner.js";
