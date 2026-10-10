@@ -12,6 +12,7 @@
     "build": "tsc --project tsconfig.build.json"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "latest",
     "zod": "^4"
   },
   "devDependencies": {

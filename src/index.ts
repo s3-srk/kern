@@ -4,6 +4,8 @@ export * from "./store.js";
 export * from "./state.js";
 export * from "./messages.js";
 export { FakeModel } from "./fake-model.js";
+export { AnthropicAdapter } from "./anthropic-adapter.js";
+export type { AnthropicAdapterOptions } from "./anthropic-adapter.js";
 export { tool, toToolSpec, validateToolInput } from "./tools.js";
 export type { Tool, ToolContext } from "./tools.js";
 export { Agent } from "./agent.js";

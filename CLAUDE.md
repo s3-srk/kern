@@ -9,6 +9,7 @@ spec disagree, stop and ask; do not silently diverge.
 Node 22, ESM, TypeScript strict, Zod v4, Vitest, tsx.
 No agent/orchestration frameworks. Use raw provider SDKs.
 ESLint (flat config) + typescript-eslint
+@anthropic-ai/sdk, imported only by the Anthropic adapter.
 
 ## Rules
 
@@ -19,11 +20,16 @@ ESLint (flat config) + typescript-eslint
 - Never modify persisted events. Run state = deriveState(events).
 - Imports use .js extensions (NodeNext).
 - Never read or print .env. Never commit secrets.
+- Provider SDK imports stay inside their adapter file.
+- Never run anything in examples/ or anything that calls a real model API.
+  The user runs those manually.
 
 ## Before you say a step is done
 
 Run: npm run typecheck && npm run lint && npm test
 All three must pass. Show me the output summary.
+
+Reply with a summary only: files created or changed, and whether package.json changed.
 
 ## Git
 

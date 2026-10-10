@@ -6,6 +6,7 @@ import type { ContextStrategy } from "./context.js";
 import type { KernEvent } from "./events.js";
 import { deriveState, type RunState } from "./state.js";
 import { runLoop } from "./loop.js";
+import { AnthropicAdapter } from "./anthropic-adapter.js";
 
 function generateRunId(): string {
   const now = new Date();
@@ -59,6 +60,9 @@ export class Runner {
         }
         this.models.set(model.provider, model);
       }
+    } else {
+      // Register default adapters when models is omitted
+      this.models.set("anthropic", new AnthropicAdapter());
     }
 
     this.context = options?.context;
