@@ -6,7 +6,7 @@ Each run is stored as an append-only log of typed events. Everything else comes 
 
 The kernel stays small on purpose. Model providers, storage, context building and policy each sit behind a narrow interface. Each design choice is written up as an Architecture Decision Record (ADR).
 
-## What Kern gives you
+## Capabilities
 
 - **Event-sourced runs.** Every step is an immutable event, persisted before it is acted on; run state is derived from the log.
 - **Human-in-the-loop approval.** Runs pause before sensitive tool calls and resume as the same run after approval or rejection.
@@ -151,5 +151,5 @@ The raw events are in `runs/<runId>.jsonl`.
 
 **Scope and Spec first.** Decided on architecture, scope and design before writing code. Set the roadmap with five broad phases; the steps within each phase were planned only when that phase began, so each plan built on what already existed.
 **One step at a time.** Set the rules in CLAUDE.md: one step per session, stop and ask if code and spec disagree.
-**Maintained Progress log.** At the end of each step, Claude Code summarised the changes and decisions made, and I recorded them in a progress file that informed the next step.
+**Maintained Progress log.** At the end of each step, asked Claude Code to summarize the changes and decisions made, and I recorded them in a progress file that informed the next step.
 **Testing.** Each step added focused tests for the critical paths the demo depends on, and CLAUDE.md required npm run typecheck, npm run lint and npm test to pass before a step counted as done.
