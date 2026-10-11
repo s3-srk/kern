@@ -4,4 +4,3 @@ runs/
 .env
 coverage
 .claude/settings.json,
-docs/

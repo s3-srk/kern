@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "build": "tsc --project tsconfig.build.json",
-    "kern": "tsx --env-file=.env src/bin.ts",
+    "kern": "tsx --env-file-if-exists=.env src/bin.ts",
     "demo": "tsx examples/demo/index.ts",
     "demo:reset": "tsx examples/demo/reset.ts"
   },
