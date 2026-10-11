@@ -144,3 +144,12 @@ The raw events are in `runs/<runId>.jsonl`.
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): core concepts, components, run lifecycle and public API.
 - [docs/ADRS.md](docs/ADRS.md): nine design decisions with their context, alternatives and trade-offs.
 - [docs/LIMITATIONS.md](docs/LIMITATIONS.md): known limitations and deferred work.
+
+## Development approach
+
+**Coding agent:** Claude Code
+
+**Scope and Spec first.** Decided on architecture, scope and design before writing code. Set the roadmap with five broad phases; the steps within each phase were planned only when that phase began, so each plan built on what already existed.
+**One step at a time.** Set the rules in CLAUDE.md: one step per session, stop and ask if code and spec disagree.
+**Maintained Progress log.** At the end of each step, Claude Code summarised the changes and decisions made, and I recorded them in a progress file that informed the next step.
+**Testing.** Each step added focused tests for the critical paths the demo depends on, and CLAUDE.md required npm run typecheck, npm run lint and npm test to pass before a step counted as done.
