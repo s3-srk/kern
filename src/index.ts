@@ -42,3 +42,5 @@ export { Runner } from "./runner.js";
 export type { RunnerOptions } from "./runner.js";
 export { formatTrace } from "./trace.js";
 export type { FormatTraceOptions } from "./trace.js";
+export { main } from "./cli.js";
+export type { CliIO } from "./cli.js";
