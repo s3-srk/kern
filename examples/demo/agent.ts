@@ -36,7 +36,10 @@ export async function resetDemoData(runsDir: string): Promise<void> {
   await saveRecords(recordsPath, SEED_RECORDS);
 }
 
-function createDemoAgent(runsDir: string): Agent {
+function createDemoAgent(
+  runsDir: string,
+  model: string = "anthropic:claude-haiku-4-5-20251001"
+): Agent {
   const recordsPath = path.join(runsDir, "demo-records.json");
 
   const lookupRecord = tool({
@@ -96,7 +99,7 @@ function createDemoAgent(runsDir: string): Agent {
 
   return new Agent({
     name: "demo-agent",
-    model: "anthropic:claude-haiku-4-5-20251001",
+    model,
     instructions: `You are a helpful order management assistant. Always look up a record before changing it.
 To change or delete a record, call the tool directly. Do NOT ask the user for confirmation in text,
 because approval is handled by the system. If a tool is denied or rejected, say so plainly.

@@ -17,7 +17,7 @@ export async function runDemo(opts?: DemoOptions): Promise<ReturnType<typeof der
   // Initialize demo data
   await resetDemoData(runsDir);
 
-  const agent = createDemoAgent(runsDir);
+  const agent = createDemoAgent(runsDir, "fake:demo-model");
 
   // Set up FakeModel with scripted responses
   const fakeModel = new FakeModel([
