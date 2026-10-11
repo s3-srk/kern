@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { stampEvent, truncatingContext } from "../src/index.js";
+import { stampEvent } from "../src/events.js";
+import { truncatingContext } from "../src/index.js";
 
 describe("truncatingContext", () => {
   it("builds context with system, user, assistant, and tool messages", () => {
@@ -35,6 +36,7 @@ describe("truncatingContext", () => {
           type: "policy_decided",
           callId: "call-1",
           decision: "allow",
+          source: "default",
         },
         { runId: "run-1", seq: 3 }
       ),

@@ -1,10 +1,12 @@
 import type { Tool } from "./tools.js";
+import type { Hook } from "./hooks.js";
 
 export interface AgentConfig {
   name: string;
   model: string;
   instructions: string;
   tools?: Tool[];
+  hooks?: Hook[];
   maxSteps?: number;
 }
 
@@ -15,6 +17,7 @@ export class Agent {
   readonly model: string;
   readonly instructions: string;
   readonly tools: Tool[];
+  readonly hooks: Hook[];
   readonly maxSteps: number;
 
   constructor(config: AgentConfig) {
@@ -22,6 +25,7 @@ export class Agent {
     this.model = config.model;
     this.instructions = config.instructions;
     this.tools = config.tools ?? [];
+    this.hooks = config.hooks ?? [];
     this.maxSteps = config.maxSteps ?? 10;
 
     this.validate();

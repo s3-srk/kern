@@ -68,6 +68,7 @@ export interface PolicyDecidedEvent extends EventEnvelope {
   callId: string;
   decision: "allow" | "ask" | "deny";
   reason?: string;
+  source: string;
 }
 
 export interface RunPausedEvent extends EventEnvelope {

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { deriveState, stampEvent } from "../src/index.js";
+import { stampEvent } from "../src/events.js";
+import { deriveState } from "../src/index.js";
 
 describe("deriveState", () => {
   it("completed run: status, steps and output are correct", () => {

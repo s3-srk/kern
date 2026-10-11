@@ -131,4 +131,111 @@ export class Runner {
     }
     return deriveState(events);
   }
+
+  async *resumeStream(
+    agent: Agent,
+    runId: string,
+    opts?: {
+      decision?: { approved: boolean; reason?: string };
+      signal?: AbortSignal;
+    }
+  ): AsyncGenerator<KernEvent> {
+    // Read existing events
+    let storedEvents: KernEvent[];
+    try {
+      storedEvents = await this.store.read(runId);
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes("Run not found")
+      ) {
+        throw new Error(`Unknown run ${runId}`, { cause: error });
+      }
+      throw new Error(
+        `Failed to read run from store: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error }
+      );
+    }
+
+    // Check agent match first (before checking status)
+    const startEvent = storedEvents[0];
+    if (
+      startEvent.type === "run_started" &&
+      (startEvent.agentName !== agent.name ||
+        startEvent.model !== agent.model)
+    ) {
+      throw new Error("Agent name or model does not match run");
+    }
+
+    // Validate the run state
+    const state = deriveState(storedEvents);
+
+    // Check if run is terminal
+    if (state.status === "completed" || state.status === "failed") {
+      throw new Error(`Cannot resume ${state.status} run`);
+    }
+
+    // Extract provider from agent.model
+    const [provider] = agent.model.split(":");
+
+    // Resolve the adapter
+    const model = this.models.get(provider);
+    if (!model) {
+      throw new Error(
+        `No model adapter registered for provider "${provider}"`
+      );
+    }
+
+    // Check decision and pending state
+    if (opts?.decision) {
+      // Decision provided
+      if (state.status !== "paused" || !state.pending) {
+        throw new Error("Run is not paused or has no pending call");
+      }
+
+      // Check if already decided
+      const lastEvent = storedEvents[storedEvents.length - 1];
+      if (
+        lastEvent.type === "approval_decided" &&
+        lastEvent.callId === state.pending.call.id
+      ) {
+        throw new Error("Pending call already has a decision");
+      }
+    } else {
+      // No decision provided
+      if (
+        state.status === "paused" &&
+        state.pending &&
+        !state.pending.approved
+      ) {
+        throw new Error("run is paused; approve or reject");
+      }
+    }
+
+    // Delegate to runLoop with decision
+    yield* runLoop({
+      agent,
+      model,
+      store: this.store,
+      runId,
+      context: this.context,
+      signal: opts?.signal,
+      decision: opts?.decision,
+    });
+  }
+
+  async resume(
+    agent: Agent,
+    runId: string,
+    opts?: {
+      decision?: { approved: boolean; reason?: string };
+      signal?: AbortSignal;
+    }
+  ): Promise<RunState> {
+    const events: KernEvent[] = [];
+    for await (const event of this.resumeStream(agent, runId, opts)) {
+      events.push(event);
+    }
+    return deriveState(events);
+  }
 }

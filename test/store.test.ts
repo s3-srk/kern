@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { promises as fs } from "fs";
 import path from "path";
+import { stampEvent, type KernEvent } from "../src/events.js";
 import { JsonlRunStore } from "../src/index.js";
-import { stampEvent, KernEvent } from "../src/index.js";
 
 describe("JsonlRunStore", () => {
   let tempDir: string;

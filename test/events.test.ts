@@ -1,11 +1,6 @@
 import { describe, it, expect } from "vitest";
-import {
-  stampEvent,
-  isTerminalEvent,
-  KernEvent,
-  NewEvent,
-  ToolCall,
-} from "../src/index.js";
+import { stampEvent, isTerminalEvent, type NewEvent } from "../src/events.js";
+import type { KernEvent, ToolCall } from "../src/index.js";
 
 describe("events", () => {
   describe("stampEvent", () => {

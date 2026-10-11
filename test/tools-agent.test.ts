@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect } from "vitest";
 import { z } from "zod";
-import { tool, toToolSpec, validateToolInput, Agent } from "../src/index.js";
+import { toToolSpec, validateToolInput } from "../src/tools.js";
+import { tool, Agent } from "../src/index.js";
 
 describe("tool and Agent", () => {
   it("tool produces a ToolSpec with no $schema, and validateToolInput works", () => {

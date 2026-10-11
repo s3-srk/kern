@@ -10,6 +10,35 @@ import { type RunStore } from "./store.js";
 import { deriveState } from "./state.js";
 import { type ContextStrategy, truncatingContext } from "./context.js";
 import { validateToolInput, toToolSpec } from "./tools.js";
+import { resolvePolicy } from "./hooks.js";
+
+async function appendAndYield(
+  store: RunStore,
+  events: KernEvent[],
+  newEvent: NewEvent,
+  runId: string,
+  hooks: Array<{ onEvent?: (e: KernEvent) => void | Promise<void> }>
+): Promise<KernEvent> {
+  const lastSeq = events[events.length - 1]?.seq ?? 0;
+  const stamped = stampEvent(newEvent, {
+    runId,
+    seq: lastSeq + 1,
+  });
+  await store.append(stamped);
+  events.push(stamped);
+
+  for (const hook of hooks) {
+    if (hook.onEvent) {
+      try {
+        await hook.onEvent(stamped);
+      } catch {
+        // Ignore onEvent errors
+      }
+    }
+  }
+
+  return stamped;
+}
 
 export async function* runLoop({
   agent,
@@ -19,6 +48,7 @@ export async function* runLoop({
   input,
   context,
   signal,
+  decision,
 }: {
   agent: Agent;
   model: ModelAdapter;
@@ -27,6 +57,7 @@ export async function* runLoop({
   input?: string;
   context?: ContextStrategy;
   signal?: AbortSignal;
+  decision?: { approved: boolean; reason?: string };
 }): AsyncGenerator<KernEvent> {
   const contextStrategy = context ?? truncatingContext();
 
@@ -62,10 +93,46 @@ export async function* runLoop({
       input,
     };
 
-    const stamped = stampEvent(runStartedEvent, { runId, seq: 1 });
-    await store.append(stamped);
-    events.push(stamped);
-    yield stamped;
+    const event = await appendAndYield(
+      store,
+      events,
+      runStartedEvent,
+      runId,
+      agent.hooks
+    );
+    yield event;
+  } else {
+    // Existing run - handle decision if provided
+    if (decision) {
+      const state = deriveState(events);
+      if (state.status !== "paused" || !state.pending) {
+        throw new Error("Run is not paused or has no pending call");
+      }
+
+      const event = await appendAndYield(
+        store,
+        events,
+        {
+          type: "approval_decided",
+          callId: state.pending.call.id,
+          approved: decision.approved,
+          reason: decision.reason,
+        },
+        runId,
+        agent.hooks
+      );
+      yield event;
+
+      // Append run_resumed after decision
+      const resumeEvent = await appendAndYield(
+        store,
+        events,
+        { type: "run_resumed" },
+        runId,
+        agent.hooks
+      );
+      yield resumeEvent;
+    }
   }
 
   // Main loop
@@ -81,7 +148,14 @@ export async function* runLoop({
       return;
     }
 
-    let lastSeq = events[events.length - 1]?.seq ?? 0;
+    // Check for paused state with no approval_decided yet
+    if (state.status === "paused" && state.pending) {
+      const lastEvent = events[events.length - 1];
+      if (lastEvent?.type === "run_paused") {
+        return;
+      }
+    }
+
     let lastModelResponse: ModelRespondedEvent | null = null;
 
     // Find the last model_responded event
@@ -126,14 +200,14 @@ export async function* runLoop({
               },
             };
 
-            lastSeq += 1;
-            const stamped = stampEvent(failedEvent, {
+            const event = await appendAndYield(
+              store,
+              events,
+              failedEvent,
               runId,
-              seq: lastSeq,
-            });
-            await store.append(stamped);
-            events.push(stamped);
-            yield stamped;
+              agent.hooks
+            );
+            yield event;
             return;
           }
 
@@ -149,14 +223,14 @@ export async function* runLoop({
               isError: true,
             };
 
-            lastSeq += 1;
-            const stamped = stampEvent(resultEvent, {
+            const event = await appendAndYield(
+              store,
+              events,
+              resultEvent,
               runId,
-              seq: lastSeq,
-            });
-            await store.append(stamped);
-            events.push(stamped);
-            yield stamped;
+              agent.hooks
+            );
+            yield event;
             continue;
           }
 
@@ -172,16 +246,115 @@ export async function* runLoop({
               isError: true,
             };
 
-            lastSeq += 1;
-            const stamped = stampEvent(resultEvent, {
+            const event = await appendAndYield(
+              store,
+              events,
+              resultEvent,
               runId,
-              seq: lastSeq,
-            });
-            await store.append(stamped);
-            events.push(stamped);
-            yield stamped;
+              agent.hooks
+            );
+            yield event;
             continue;
           }
+
+          // Check if approval_decided exists for this call
+          const approvalEvent = events.find(
+            (e) =>
+              e.type === "approval_decided" &&
+              "callId" in e &&
+              e.callId === call.id
+          );
+
+          let approved: boolean;
+          let approvalReason: string | undefined;
+
+          if (approvalEvent && approvalEvent.type === "approval_decided") {
+            approved = approvalEvent.approved;
+            approvalReason = approvalEvent.reason;
+          } else {
+            // Apply policy if no approval decision
+            const policyResult = await resolvePolicy(agent.hooks, {
+              runId,
+              call,
+              tool,
+              input: validation.data,
+            }, tool.requiresApproval);
+
+            const policyDecidedEvent = await appendAndYield(
+              store,
+              events,
+              {
+                type: "policy_decided",
+                callId: call.id,
+                decision: policyResult.decision,
+                reason: policyResult.reason,
+                source: policyResult.source,
+              },
+              runId,
+              agent.hooks
+            );
+            yield policyDecidedEvent;
+
+            // Handle policy decision
+            if (policyResult.decision === "deny") {
+              const resultEvent: NewEvent = {
+                type: "tool_result",
+                callId: call.id,
+                output: `Denied by policy: ${policyResult.reason || "denied"}`,
+                isError: true,
+              };
+
+              const event = await appendAndYield(
+                store,
+                events,
+                resultEvent,
+                runId,
+                agent.hooks
+              );
+              yield event;
+              continue;
+            }
+
+            if (policyResult.decision === "ask") {
+              const pauseEvent = await appendAndYield(
+                store,
+                events,
+                {
+                  type: "run_paused",
+                  reason: "approval",
+                  callId: call.id,
+                },
+                runId,
+                agent.hooks
+              );
+              yield pauseEvent;
+              return;
+            }
+
+            approved = true;
+          }
+
+          // Handle approval decision if it came from approval_decided
+          if (approved === false) {
+            const resultEvent: NewEvent = {
+              type: "tool_result",
+              callId: call.id,
+              output: `Rejected by user: ${approvalReason || "no reason"}`,
+              isError: true,
+            };
+
+            const event = await appendAndYield(
+              store,
+              events,
+              resultEvent,
+              runId,
+              agent.hooks
+            );
+            yield event;
+            continue;
+          }
+
+          // approved is true (from policy "allow" or approval_decided approved), continue with execution
 
           // Append tool_started
           const startedEvent: NewEvent = {
@@ -191,14 +364,14 @@ export async function* runLoop({
             args: call.args,
           };
 
-          lastSeq += 1;
-          const startedStamped = stampEvent(startedEvent, {
+          const started = await appendAndYield(
+            store,
+            events,
+            startedEvent,
             runId,
-            seq: lastSeq,
-          });
-          await store.append(startedStamped);
-          events.push(startedStamped);
-          yield startedStamped;
+            agent.hooks
+          );
+          yield started;
 
           // Execute tool
           let output: unknown;
@@ -225,14 +398,14 @@ export async function* runLoop({
                 isError: true,
               };
 
-              lastSeq += 1;
-              const stamped = stampEvent(resultEvent, {
+              const event = await appendAndYield(
+                store,
+                events,
+                resultEvent,
                 runId,
-                seq: lastSeq,
-              });
-              await store.append(stamped);
-              events.push(stamped);
-              yield stamped;
+                agent.hooks
+              );
+              yield event;
               continue;
             }
           } catch (error) {
@@ -243,14 +416,14 @@ export async function* runLoop({
               isError: true,
             };
 
-            lastSeq += 1;
-            const stamped = stampEvent(resultEvent, {
+            const event = await appendAndYield(
+              store,
+              events,
+              resultEvent,
               runId,
-              seq: lastSeq,
-            });
-            await store.append(stamped);
-            events.push(stamped);
-            yield stamped;
+              agent.hooks
+            );
+            yield event;
             continue;
           }
 
@@ -262,14 +435,14 @@ export async function* runLoop({
             isError: false,
           };
 
-          lastSeq += 1;
-          const resultStamped = stampEvent(resultEvent, {
+          const event = await appendAndYield(
+            store,
+            events,
+            resultEvent,
             runId,
-            seq: lastSeq,
-          });
-          await store.append(resultStamped);
-          events.push(resultStamped);
-          yield resultStamped;
+            agent.hooks
+          );
+          yield event;
         }
       }
 
@@ -286,13 +459,14 @@ export async function* runLoop({
         output: lastModelResponse.text,
       };
 
-      const stamped = stampEvent(completedEvent, {
+      const event = await appendAndYield(
+        store,
+        events,
+        completedEvent,
         runId,
-        seq: lastSeq + 1,
-      });
-      await store.append(stamped);
-      events.push(stamped);
-      yield stamped;
+        agent.hooks
+      );
+      yield event;
       return;
     }
 
@@ -308,13 +482,14 @@ export async function* runLoop({
         },
       };
 
-      const stamped = stampEvent(failedEvent, {
+      const event = await appendAndYield(
+        store,
+        events,
+        failedEvent,
         runId,
-        seq: lastSeq + 1,
-      });
-      await store.append(stamped);
-      events.push(stamped);
-      yield stamped;
+        agent.hooks
+      );
+      yield event;
       return;
     }
 
@@ -347,13 +522,14 @@ export async function* runLoop({
       messageCount: contextView.messages.length,
     };
 
-    const requestStamped = stampEvent(requestEvent, {
+    const req = await appendAndYield(
+      store,
+      events,
+      requestEvent,
       runId,
-      seq: lastSeq + 1,
-    });
-    await store.append(requestStamped);
-    events.push(requestStamped);
-    yield requestStamped;
+      agent.hooks
+    );
+    yield req;
 
     // Call model
     let modelResponse;
@@ -368,13 +544,14 @@ export async function* runLoop({
         },
       };
 
-      const stamped = stampEvent(failedEvent, {
+      const event = await appendAndYield(
+        store,
+        events,
+        failedEvent,
         runId,
-        seq: lastSeq + 2,
-      });
-      await store.append(stamped);
-      events.push(stamped);
-      yield stamped;
+        agent.hooks
+      );
+      yield event;
       return;
     }
 
@@ -389,12 +566,13 @@ export async function* runLoop({
       raw: modelResponse.raw,
     };
 
-    const respondedStamped = stampEvent(respondedEvent, {
+    const event = await appendAndYield(
+      store,
+      events,
+      respondedEvent,
       runId,
-      seq: lastSeq + 2,
-    });
-    await store.append(respondedStamped);
-    events.push(respondedStamped);
-    yield respondedStamped;
+      agent.hooks
+    );
+    yield event;
   }
 }
